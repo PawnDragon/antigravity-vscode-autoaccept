@@ -8,7 +8,6 @@
 
 [![MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 [![Antigravity](https://img.shields.io/badge/Antigravity-1.10.0%20tested-16a34a.svg)](#兼容性)
-[![Remote SSH](https://img.shields.io/badge/Remote%20SSH-Linux-0f766e.svg)](#兼容性)
 
 [English](README.md) · **简体中文**
 
@@ -20,13 +19,13 @@
 
 让 Antigravity 持续工作，减少重复点击。插件识别 **VS Code 官方侧栏**中的命令权限卡片，提交 **Allow Once（仅允许一次）**，再核对后端是否记录了授权。
 
-插件运行在 Linux Remote SSH 服务器，Mac、Windows 客户端可以共用同一套部署。不需要调试端口、桌面点击器或全局 Turbo。
+在 VS Code 中与 Antigravity 配合使用，不需要调试端口、桌面点击器或全局 Turbo。
 
 ## 快速开始
 
-1. 用 **VS Code Remote SSH** 连接 Linux 服务器。
+1. 在 **VS Code** 中打开项目。
 2. 安装 Google 官方 **Antigravity** 扩展，并打开侧栏。
-3. 将本插件安装到 **SSH 远程扩展宿主**。使用 VSIX 时，运行 **Extensions: Install from VSIX...** 并选择安装包。
+3. 安装 [Antigravity Sidebar Auto Accept](https://marketplace.visualstudio.com/items?itemName=Pawnkoolong.antigravity-sidebar-autoaccept)，确保它与 Antigravity 位于**同一扩展宿主**。使用 VSIX 时，运行 **Extensions: Install from VSIX...** 并选择安装包。
 4. 在可信工作区设置中启用 **Antigravity Sidebar Auto Accept**，或添加：
 
    ```json
@@ -42,7 +41,6 @@
 ## 主要功能
 
 - **官方 VS Code 侧栏适配**：处理 Allow、Submit 背后的命令权限请求。
-- **Remote SSH**：由 Linux 宿主执行，桌面客户端可用 macOS 或 Windows。
 - **限定工作区**：只处理目录与本窗口匹配的运行中会话。
 - **单次授权**：发送 Allow Once，不添加永久权限。
 - **展示实际结果**：区分已提交和后端已确认的授权。
@@ -54,7 +52,7 @@
 ```text
 当前 VS Code 窗口
         ↓
-SSH 主机上属于此窗口的官方 Antigravity 后端
+属于此窗口的官方 Antigravity 后端
         ↓
 当前工作区的命令权限卡片
         ↓
@@ -81,8 +79,7 @@ SSH 主机上属于此窗口的官方 Antigravity 后端
 | --- | --- |
 | 官方扩展 | `google.google-antigravity` 1.10.0，2026-11-01 验证 |
 | VS Code | 1.90 及以上 |
-| 扩展宿主 | Linux Remote SSH；本地 Linux 使用同一发现机制 |
-| 桌面客户端 | 连接该主机的 macOS、Windows 或 Linux |
+| 扩展宿主 | Linux，支持本地工作区 |
 | 本地 Windows/macOS 宿主 | 此版本未实现 |
 | 独立 Antigravity IDE | 非本插件目标 |
 
@@ -122,7 +119,7 @@ SSH 主机上属于此窗口的官方 Antigravity 后端
 
 | 现象 | 检查方式 |
 | --- | --- |
-| `WAITING` | 打开本窗口侧栏，确认两个扩展均安装在 SSH 宿主。 |
+| `WAITING` | 打开本窗口侧栏，确认两个扩展均安装在同一扩展宿主。 |
 | `ON` 但仍有卡片 | 问题、非命令权限、明确 Ask 和 Hook 审批仍需手动处理。 |
 | `ERROR` | 运行 **Show Logs**，检查最后一条错误。 |
 | 旧版 `response too large` | 更新至 0.1.1 或以上，并重载窗口。 |

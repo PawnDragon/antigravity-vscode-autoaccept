@@ -8,7 +8,6 @@ Built for the latest tested Antigravity VS Code sidebar.
 
 [![MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 [![Antigravity](https://img.shields.io/badge/Antigravity-1.10.0%20tested-16a34a.svg)](#compatibility)
-[![Remote SSH](https://img.shields.io/badge/Remote%20SSH-Linux-0f766e.svg)](#compatibility)
 
 **English** · [简体中文](README.zh-CN.md)
 
@@ -20,13 +19,13 @@ Built for the latest tested Antigravity VS Code sidebar.
 
 Keep your Antigravity agent moving while you work. This extension handles command permission cards in the **official VS Code sidebar**, submits **Allow Once**, and checks that the backend recorded the approval.
 
-It runs on your Linux Remote SSH host, so the same setup can be used from a Mac or Windows client. No remote debugging port, desktop clicker, or global Turbo setting is required.
+Use it alongside Antigravity in VS Code. No remote debugging port, desktop clicker, or global Turbo setting is required.
 
 ## Quick Start
 
-1. Connect to your **Linux host with VS Code Remote SSH**.
+1. Open your project in **VS Code**.
 2. Install Google's official **Antigravity** extension and open its sidebar.
-3. Install this extension **in the SSH host**. For a VSIX, run **Extensions: Install from VSIX...** and select the package.
+3. Install [Antigravity Sidebar Auto Accept](https://marketplace.visualstudio.com/items?itemName=Pawnkoolong.antigravity-sidebar-autoaccept) in the **same extension host as Antigravity**. For a VSIX, run **Extensions: Install from VSIX...** and select the package.
 4. In your trusted workspace, enable **Antigravity Sidebar Auto Accept** in Settings, or add:
 
    ```json
@@ -42,7 +41,6 @@ After an update, run **Developer: Reload Window** when your current task has fin
 ## Features
 
 - **Official VS Code sidebar support** — handles command permission cards behind Allow and Submit.
-- **Remote SSH operation** — runs on Linux; your desktop client can be macOS or Windows.
 - **Workspace scope** — handles running conversations whose folders match this window.
 - **One-time approvals** — sends Allow Once without saving permanent grants.
 - **Visible results** — distinguishes submitted requests from verified approvals.
@@ -54,7 +52,7 @@ After an update, run **Developer: Reload Window** when your current task has fin
 ```text
 This VS Code window
         ↓
-Its official Antigravity backend on the SSH host
+Its official Antigravity backend
         ↓
 Current-workspace command permission card
         ↓
@@ -81,8 +79,7 @@ Eligible commands run without your click, including commands that can access fil
 | --- | --- |
 | Official extension | `google.google-antigravity` 1.10.0; verified 2026-11-01 |
 | VS Code | 1.90 or later |
-| Extension host | Linux Remote SSH; local Linux uses the same discovery mechanism |
-| Desktop client | macOS, Windows, or Linux connected to that host |
+| Extension host | Linux; supports local workspaces |
 | Local Windows/macOS host | Not implemented in this release |
 | Standalone Antigravity IDE | Not the target of this adapter |
 
@@ -122,7 +119,7 @@ When Ezra Auto Accept is present, this adapter attempts to stop its old command 
 
 | Symptom | What to check |
 | --- | --- |
-| `WAITING` | Open this window's Antigravity sidebar; install both extensions in the SSH host. |
+| `WAITING` | Open this window's Antigravity sidebar; install both extensions in the same extension host. |
 | `ON`, but a card remains | Questions, non-command permissions, explicit Ask, and hook approvals stay manual. |
 | `ERROR` | Run **Show Logs** and inspect the last error. |
 | Old `response too large` | Upgrade to 0.1.1 or later and reload the window. |

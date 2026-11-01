@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- Remove the SSH prerequisite from both READMEs and the Marketplace description.
+- Clarify installation alongside Antigravity in the same extension host.
+- Retain the current Linux host compatibility requirements.
+
 ## 0.1.2
 
 - Treat empty conversation maps as idle instead of protocol errors.

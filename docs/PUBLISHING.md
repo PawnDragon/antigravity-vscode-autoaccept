@@ -24,8 +24,8 @@ gh repo create PawnDragon/antigravity-sidebar-autoaccept --public --source=. --r
 CI runs checks and packages the extension. Tag the matching version to release:
 
 ```sh
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The release workflow checks the version, runs tests, packages with official
