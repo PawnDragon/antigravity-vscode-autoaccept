@@ -74,9 +74,9 @@
   "scripts": {
     "check": "node --check core.js && node --check extension.js",
     "test": "node --test test/*.test.js",
-    "package": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix",
-    "publish:marketplace": "vsce publish --oidc --no-dependencies",
-    "package:local": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix --no-rewrite-relative-links"
+    "package": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --githubBranch main --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix",
+    "publish:marketplace": "vsce publish --githubBranch main --oidc --no-dependencies",
+    "package:local": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --githubBranch main --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix --no-rewrite-relative-links"
   },
   "devDependencies": {
     "@vscode/vsce": "4.1.0"
