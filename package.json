@@ -1,7 +1,7 @@
 {
   "name": "antigravity-sidebar-autoaccept",
   "displayName": "Antigravity Sidebar Auto Accept",
-  "publisher": "securerag-local",
+  "publisher": "Pawnkoolong",
   "version": "0.1.2",
   "description": "Auto accept command approvals in the latest tested official Antigravity extension for VS Code. Linux Remote SSH support for macOS and Windows clients.",
   "license": "MIT",

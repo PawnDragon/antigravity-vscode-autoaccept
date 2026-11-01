@@ -4,19 +4,10 @@
 
 ## First public release
 
-Replace the development publisher `securerag-local` with a publisher you own:
-
-```sh
-npm pkg set publisher=YOUR_PUBLISHER_ID
-npm pkg set repository.type=git
-npm pkg set repository.url=https://github.com/PawnDragon/antigravity-sidebar-autoaccept.git
-npm pkg set homepage=https://github.com/PawnDragon/antigravity-sidebar-autoaccept#readme
-npm pkg set bugs.url=https://github.com/PawnDragon/antigravity-sidebar-autoaccept/issues
-```
-
-These are placeholders, not existing release identities. A publisher change
-creates a new extension ID; disable the development extension before installing
-the public one.
+The public publisher is `Pawnkoolong`, and the extension ID is
+`Pawnkoolong.antigravity-sidebar-autoaccept`. Disable the earlier
+`securerag-local.antigravity-sidebar-autoaccept` development extension before
+installing the public one, so only one adapter handles each approval.
 
 ## GitHub
 
@@ -44,8 +35,11 @@ The release workflow checks the version, runs tests, packages with official
 
 1. Open [publisher management](https://marketplace.visualstudio.com/manage) and
    create or select the publisher used in `package.json`.
-2. Add a Trusted Publishing policy for your GitHub owner, repository, and
-   workflow `publish.yml`. This workflow uses no GitHub environment.
+2. Add a Trusted Publishing policy with these exact fields:
+   - Repository owner: `PawnDragon`
+   - Repository: `antigravity-sidebar-autoaccept`
+   - Workflow: `publish.yml`
+   - Environment: leave empty.
 3. Push the configured manifest and a passing build.
 4. Run **Publish to Visual Studio Marketplace** in Actions. It uses OIDC and
    `vsce publish --oidc`, with no PAT committed.
