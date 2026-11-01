@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.vsix
+.vsce
+.env
+.env.*
+*.log
+__pycache__/
+VERIFICATION.md

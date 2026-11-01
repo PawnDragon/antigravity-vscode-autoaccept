@@ -1,0 +1,13 @@
+.git/**
+.github/**
+.vscode/**
+node_modules/**
+test/**
+dist/**
+.gitignore
+.vscodeignore
+package-lock.json
+package.py
+probe.js
+VERIFICATION.md
+*.vsix

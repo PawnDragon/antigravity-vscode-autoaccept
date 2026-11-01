@@ -1,0 +1,92 @@
+{
+  "name": "antigravity-sidebar-autoaccept",
+  "displayName": "Antigravity Sidebar Auto Accept",
+  "publisher": "securerag-local",
+  "version": "0.1.2",
+  "description": "Auto accept command approvals in the latest tested official Antigravity extension for VS Code. Linux Remote SSH support for macOS and Windows clients.",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": false
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "antigravitySidebarAutoAccept.toggle",
+        "title": "Antigravity Sidebar Auto Accept: Toggle ON/OFF"
+      },
+      {
+        "command": "antigravitySidebarAutoAccept.showLogs",
+        "title": "Antigravity Sidebar Auto Accept: Show Logs"
+      },
+      {
+        "command": "antigravitySidebarAutoAccept.check",
+        "title": "Antigravity Sidebar Auto Accept: Check Connection"
+      }
+    ],
+    "configuration": {
+      "title": "Antigravity Sidebar Auto Accept",
+      "properties": {
+        "antigravitySidebarAutoAccept.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "Automatically allow command permission cards in this trusted workspace. Explicit Ask rules and non-command questions stay manual."
+        },
+        "antigravitySidebarAutoAccept.intervalMs": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 500,
+          "maximum": 10000,
+          "description": "Permission scan interval in milliseconds."
+        }
+      }
+    }
+  },
+  "keywords": [
+    "antigravity",
+    "auto accept",
+    "auto approve",
+    "remote ssh",
+    "AI agent",
+    "command approvals"
+  ],
+  "galleryBanner": {
+    "color": "#101827",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "scripts": {
+    "check": "node --check core.js && node --check extension.js",
+    "test": "node --test test/*.test.js",
+    "package": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix",
+    "publish:marketplace": "vsce publish --oidc --no-dependencies",
+    "package:local": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix --no-rewrite-relative-links"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PawnDragon/antigravity-sidebar-autoaccept.git"
+  },
+  "homepage": "https://github.com/PawnDragon/antigravity-sidebar-autoaccept#readme",
+  "bugs": {
+    "url": "https://github.com/PawnDragon/antigravity-sidebar-autoaccept/issues"
+  }
+}
