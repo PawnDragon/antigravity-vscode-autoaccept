@@ -9,6 +9,11 @@ Platform fixtures exercise Linux `/proc` and macOS `ps` discovery on either OS,
 including process ownership, multiple roots, spaces, Unicode, literal quotes,
 filesystem aliases, subprocess failures without token disclosure, and portable
 backend liveness. CI runs Node.js 22 and 24 on both macOS and Linux.
+Rename regressions cover the default OFF state, legacy settings, explicit new
+settings taking priority (including OFF overriding legacy ON), and setting scope
+precedence. Old command IDs forward to the new commands for existing bindings.
+Activation tests verify the renamed commands and prevent duplicate polling or
+command registration conflicts when the previous extension is still active.
 Tests use synthetic commands and local HTTP fixtures, without calling a model
 or executing fixture commands.
 

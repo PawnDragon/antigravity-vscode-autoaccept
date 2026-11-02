@@ -53,7 +53,7 @@ test('macOS process inspection errors never expose subprocess output or tokens',
 });
 
 test('Linux discovery remains supported on every test host', t => {
-    const procRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-sidebar-linux-'));
+    const procRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-vscode-linux-'));
     t.after(() => fs.rmSync(procRoot, { recursive: true, force: true }));
     for (const [pid, parent] of [[7, 99], [43, 42]]) {
         const directory = path.join(procRoot, String(pid));
@@ -65,7 +65,7 @@ test('Linux discovery remains supported on every test host', t => {
 });
 
 test('backend and conversation workspace matching resolve filesystem aliases', t => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-sidebar-alias-'));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-vscode-alias-'));
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
     const actual = path.join(directory, 'actual workspace');
     const alias = path.join(directory, 'alias');

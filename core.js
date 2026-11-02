@@ -75,7 +75,7 @@ function discoverBackend(ownerPid, roots, { platform = process.platform, procRoo
     } else {
         throw new Error(`Unsupported extension host: ${platform}. Use a local macOS or Linux extension host.`);
     }
-    const error = new Error('No Antigravity backend in this window. Open the Antigravity sidebar.');
+    const error = new Error('No Antigravity backend in this window. Open the Antigravity extension.');
     error.code = 'BACKEND_NOT_READY';
     throw error;
 }
@@ -162,7 +162,7 @@ class Acceptor {
     }
 
     async readSteps(cascadeId, stepOffset) {
-        // The default projection includes large historical snapshots; use the same projection as the sidebar.
+        // The default projection includes large historical snapshots; use the same projection as the official extension.
         return this.call('GetCascadeTrajectorySteps', {
             cascadeId, stepOffset, trajectoryVerbosity: 'CLIENT_TRAJECTORY_VERBOSITY_PROD_UI'
         });
@@ -183,7 +183,7 @@ class Acceptor {
                 this.log(`VERIFIED allow once: conversation ${item.cascadeId.slice(0, 8)}, step ${item.stepIndex}`);
             } else if (Date.now() - item.sentAt > 30000) {
                 this.unverified.delete(key);
-                this.log(`UNVERIFIED submission: step ${item.stepIndex}; inspect the sidebar. No automatic retry.`);
+                this.log(`UNVERIFIED submission: step ${item.stepIndex}; inspect Antigravity. No automatic retry.`);
             }
         }
     }

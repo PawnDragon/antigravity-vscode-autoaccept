@@ -5,9 +5,12 @@
 ## First public release
 
 The public publisher is `Pawnkoolong`, and the extension ID is
-`Pawnkoolong.antigravity-sidebar-autoaccept`. Disable the earlier
-`securerag-local.antigravity-sidebar-autoaccept` development extension before
-installing the public one, so only one adapter handles each approval.
+`Pawnkoolong.antigravity-vscode-autoaccept`. This is a new Marketplace listing.
+Disable the previous `Pawnkoolong.antigravity-sidebar-autoaccept` extension and
+the earlier `securerag-local.antigravity-sidebar-autoaccept` development extension
+before enabling the new one, so only one adapter handles each approval. Do not
+unpublish the previous listing: existing installations do not automatically
+move to the new extension ID.
 
 ## GitHub
 
@@ -17,15 +20,15 @@ ignored. After authenticating GitHub CLI, use your own Git author identity:
 
 ```sh
 git add .
-git commit -m "Prepare Antigravity sidebar auto-accept release"
-gh repo create PawnDragon/antigravity-sidebar-autoaccept --public --source=. --remote=origin --push
+git commit -m "Prepare Antigravity VS Code Auto Accept release"
+gh repo create PawnDragon/antigravity-vscode-autoaccept --public --source=. --remote=origin --push
 ```
 
 CI runs checks and packages the extension. Tag the matching version to release:
 
 ```sh
-git tag v0.1.3
-git push origin v0.1.3
+git tag v0.1.5
+git push origin v0.1.5
 ```
 
 The release workflow checks the version, runs tests, packages with official
@@ -37,15 +40,17 @@ The release workflow checks the version, runs tests, packages with official
    create or select the publisher used in `package.json`.
 2. Add a Trusted Publishing policy with these exact fields:
    - Repository owner: `PawnDragon`
-   - Repository: `antigravity-sidebar-autoaccept`
+   - Repository: `antigravity-vscode-autoaccept`
    - Workflow: `publish.yml`
    - Environment: leave empty.
+   After renaming the repository, update any existing Trusted Publishing policy
+   to the new repository name before running the publishing workflow.
 3. Push the configured manifest and a passing build.
 4. Run **Publish to Visual Studio Marketplace** in Actions. It uses OIDC and
    `vsce publish --oidc`, with no PAT committed.
 
 For a manual upload, run `npm ci`, `npm test`, and `npm run package`, then upload
-`dist/antigravity-sidebar-autoaccept.vsix`. Use official `vsce` for public builds;
+`dist/antigravity-vscode-autoaccept.vsix`. Use official `vsce` for public builds;
 the Python packager remains a local installation shortcut.
 
 Publisher ownership and GitHub/Microsoft sign-in require the owner's account.

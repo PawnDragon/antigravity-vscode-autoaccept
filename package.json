@@ -1,8 +1,8 @@
 {
-  "name": "antigravity-sidebar-autoaccept",
-  "displayName": "Antigravity Sidebar Auto Accept",
+  "name": "antigravity-vscode-autoaccept",
+  "displayName": "Antigravity VS Code Auto Accept",
   "publisher": "Pawnkoolong",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Auto accept command approvals in the latest tested official Antigravity extension for VS Code.",
   "license": "MIT",
   "engines": {
@@ -27,33 +27,48 @@
   "contributes": {
     "commands": [
       {
-        "command": "antigravitySidebarAutoAccept.toggle",
-        "title": "Antigravity Sidebar Auto Accept: Toggle ON/OFF"
+        "command": "antigravityVscodeAutoAccept.toggle",
+        "title": "Antigravity VS Code Auto Accept: Toggle ON/OFF"
       },
       {
-        "command": "antigravitySidebarAutoAccept.showLogs",
-        "title": "Antigravity Sidebar Auto Accept: Show Logs"
+        "command": "antigravityVscodeAutoAccept.showLogs",
+        "title": "Antigravity VS Code Auto Accept: Show Logs"
       },
       {
-        "command": "antigravitySidebarAutoAccept.check",
-        "title": "Antigravity Sidebar Auto Accept: Check Connection"
+        "command": "antigravityVscodeAutoAccept.check",
+        "title": "Antigravity VS Code Auto Accept: Check Connection"
       }
     ],
     "configuration": {
-      "title": "Antigravity Sidebar Auto Accept",
+      "title": "Antigravity VS Code Auto Accept",
       "properties": {
-        "antigravitySidebarAutoAccept.enabled": {
+        "antigravityVscodeAutoAccept.enabled": {
           "type": "boolean",
           "default": false,
           "scope": "window",
           "description": "Automatically allow command permission cards in this trusted workspace. Explicit Ask rules and non-command questions stay manual."
+        },
+        "antigravityVscodeAutoAccept.intervalMs": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 500,
+          "maximum": 10000,
+          "description": "Permission scan interval in milliseconds."
+        },
+        "antigravitySidebarAutoAccept.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "Legacy setting retained for compatibility.",
+          "deprecationMessage": "Use antigravityVscodeAutoAccept.enabled. The old value is used only when the new setting is not explicitly configured."
         },
         "antigravitySidebarAutoAccept.intervalMs": {
           "type": "number",
           "default": 1000,
           "minimum": 500,
           "maximum": 10000,
-          "description": "Permission scan interval in milliseconds."
+          "description": "Legacy setting retained for compatibility.",
+          "deprecationMessage": "Use antigravityVscodeAutoAccept.intervalMs. The old value is used only when the new setting is not explicitly configured."
         }
       }
     }
@@ -71,21 +86,21 @@
   },
   "pricing": "Free",
   "scripts": {
-    "check": "node --check core.js && node --check extension.js",
+    "check": "node --check core.js && node --check extension.js && node --check settings.js",
     "test": "node --test test/*.test.js",
-    "package": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --githubBranch main --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix",
+    "package": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --githubBranch main --no-dependencies --allow-missing-repository --out dist/antigravity-vscode-autoaccept.vsix",
     "publish:marketplace": "vsce publish --githubBranch main --oidc --no-dependencies",
-    "package:local": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --githubBranch main --no-dependencies --allow-missing-repository --out dist/antigravity-sidebar-autoaccept.vsix --no-rewrite-relative-links"
+    "package:local": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\" && vsce package --githubBranch main --no-dependencies --allow-missing-repository --out dist/antigravity-vscode-autoaccept.vsix --no-rewrite-relative-links"
   },
   "devDependencies": {
     "@vscode/vsce": "4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PawnDragon/antigravity-sidebar-autoaccept.git"
+    "url": "https://github.com/PawnDragon/antigravity-vscode-autoaccept.git"
   },
-  "homepage": "https://github.com/PawnDragon/antigravity-sidebar-autoaccept#readme",
+  "homepage": "https://github.com/PawnDragon/antigravity-vscode-autoaccept#readme",
   "bugs": {
-    "url": "https://github.com/PawnDragon/antigravity-sidebar-autoaccept/issues"
+    "url": "https://github.com/PawnDragon/antigravity-vscode-autoaccept/issues"
   }
 }

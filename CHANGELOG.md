@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.5
+
+- Rename the project to antigravity-vscode-autoaccept and the extension to Antigravity VS Code Auto Accept.
+- Publish under the new extension ID Pawnkoolong.antigravity-vscode-autoaccept.
+- Update the status bar, command titles, documentation, repository links, and VSIX filename.
+- Introduce antigravityVscodeAutoAccept settings and commands while retaining legacy settings and command bindings.
+- Document installation of the new extension and disabling the previous extension to avoid duplicate approvals.
+- Keep polling OFF while the previous extension is active and avoid conflicting legacy command registrations.
+
 ## 0.1.4
 
 - Automatically discover the current window's Antigravity backend on macOS as well as Linux.
