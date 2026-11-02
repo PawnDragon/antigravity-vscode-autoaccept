@@ -12,6 +12,8 @@ metadata = ET.SubElement(manifest, "Metadata")
 ET.SubElement(metadata, "Identity", Language="en-US", Id=package["name"], Version=package["version"], Publisher=package["publisher"])
 ET.SubElement(metadata, "DisplayName").text = package["displayName"]
 ET.SubElement(metadata, "Description").text = package["description"]
+if package.get("icon"):
+    ET.SubElement(metadata, "Icon").text = "extension/" + package["icon"]
 ET.SubElement(metadata, "Tags")
 ET.SubElement(metadata, "Categories").text = "Other"
 properties = ET.SubElement(metadata, "Properties")
@@ -23,7 +25,9 @@ ET.SubElement(installation, "InstallationTarget", Id="Microsoft.VisualStudio.Cod
 ET.SubElement(manifest, "Dependencies")
 assets = ET.SubElement(manifest, "Assets")
 ET.SubElement(assets, "Asset", Type="Microsoft.VisualStudio.Code.Manifest", Path="extension/package.json", Addressable="true")
-content_types = '''<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="json" ContentType="application/json"/><Default Extension="js" ContentType="application/javascript"/><Default Extension="md" ContentType="text/markdown"/><Default Extension="vsixmanifest" ContentType="text/xml"/></Types>'''
+if package.get("icon"):
+    ET.SubElement(assets, "Asset", Type="Microsoft.VisualStudio.Services.Icons.Default", Path="extension/" + package["icon"], Addressable="true")
+content_types = '''<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="json" ContentType="application/json"/><Default Extension="js" ContentType="application/javascript"/><Default Extension="md" ContentType="text/markdown"/><Default Extension="png" ContentType="image/png"/><Default Extension="vsixmanifest" ContentType="text/xml"/></Types>'''
 output = root / "dist" / f"{package['name']}-{package['version']}.vsix"
 output.parent.mkdir(exist_ok=True)
 with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -31,4 +35,6 @@ with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
     archive.writestr("[Content_Types].xml", content_types)
     for name in ("package.json", "extension.js", "core.js", "settings.js", "README.md", "README.zh-CN.md", "CHANGELOG.md", "LICENSE"):
         archive.write(root / name, "extension/" + name)
+    if package.get("icon"):
+        archive.write(root / package["icon"], "extension/" + package["icon"])
 print(output)

@@ -27,8 +27,8 @@ gh repo create PawnDragon/antigravity-vscode-autoaccept --public --source=. --re
 CI runs checks and packages the extension. Tag the matching version to release:
 
 ```sh
-git tag v0.1.5
-git push origin v0.1.5
+git tag v0.1.6
+git push origin v0.1.6
 ```
 
 The release workflow checks the version, runs tests, packages with official
@@ -43,9 +43,9 @@ The release workflow checks the version, runs tests, packages with official
    - Repository: `antigravity-vscode-autoaccept`
    - Workflow: `publish.yml`
    - Environment: leave empty.
-   Existing policies validate the permanent GitHub repository ID, so renaming
-   the same repository preserves its publishing identity even if the policy UI
-   still displays the previous name. Use the new name when creating a policy.
+   After renaming a repository, verify that token exchange still succeeds. If
+   it returns 401, create a replacement policy using the current repository
+   name and the same workflow before retrying publication.
 3. Push the configured manifest and a passing build.
 4. Run **Publish to Visual Studio Marketplace** in Actions. It uses OIDC and
    `vsce publish --oidc`, with no PAT committed.
@@ -56,6 +56,9 @@ the Python packager remains a local installation shortcut.
 
 Publisher ownership and GitHub/Microsoft sign-in require the owner's account.
 A local repository or generated VSIX is not a published listing.
+After a successful upload, confirm that the new version has passed Marketplace
+validation and is visible on the public listing. Upload success alone does not
+mean that validation or public availability has completed.
 
 [Official publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension).
 

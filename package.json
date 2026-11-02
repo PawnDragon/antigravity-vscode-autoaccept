@@ -2,7 +2,7 @@
   "name": "antigravity-vscode-autoaccept",
   "displayName": "Antigravity VS Code Auto Accept",
   "publisher": "Pawnkoolong",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Auto accept command approvals in the latest tested official Antigravity extension for VS Code.",
   "license": "MIT",
   "engines": {
@@ -102,5 +102,6 @@
   "homepage": "https://github.com/PawnDragon/antigravity-vscode-autoaccept#readme",
   "bugs": {
     "url": "https://github.com/PawnDragon/antigravity-vscode-autoaccept/issues"
-  }
+  },
+  "icon": "assets/icon.png"
 }

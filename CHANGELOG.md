@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.6
+
+- Add the Antigravity-inspired extension icon with a large green approval check.
+- Include the icon in both official VSIX builds and the local Python packager.
+
 ## 0.1.5
 
 - Rename the project to antigravity-vscode-autoaccept and the extension to Antigravity VS Code Auto Accept.
