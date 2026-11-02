@@ -3,9 +3,16 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
+const { execFileSync } = require('node:child_process');
 const { fileURLToPath } = require('node:url');
 
 const SERVICE = '/exa.language_server_pb.LanguageServerService/';
+
+function canonicalPath(value) {
+    const resolved = path.resolve(value);
+    try { return fs.realpathSync.native(resolved); }
+    catch { return resolved; }
+}
 
 function backendFromProcess(args, parentPid, ownerPid, roots) {
     if (parentPid !== ownerPid || path.basename(args[0] || '') !== 'agy' || !args.includes('--hub')) return;
@@ -15,31 +22,67 @@ function backendFromProcess(args, parentPid, ownerPid, roots) {
         const index = args.indexOf(name);
         return index < 0 ? undefined : args[index + 1];
     };
-    const dirs = args.filter(arg => arg.startsWith('--add-dir=')).map(arg => path.resolve(arg.slice(10)));
-    if (!dirs.length || !dirs.every(dir => roots.includes(dir))) return;
+    const dirs = args.filter(arg => arg.startsWith('--add-dir=')).map(arg => canonicalPath(arg.slice(10)));
+    const canonicalRoots = roots.map(canonicalPath);
+    if (!dirs.length || !dirs.every(dir => canonicalRoots.includes(dir))) return;
     const port = Number(value('--hub-port'));
     const token = value('--csrf_token');
     if (Number.isInteger(port) && port > 0 && port < 65536 && token) return { port, token };
 }
 
-function discoverBackend(ownerPid, roots, procRoot = '/proc') {
-    // The extension host is the SSH Linux server; the desktop client may be macOS or Windows.
-    if (process.platform !== 'linux') throw new Error('Install this version in the Linux Remote SSH extension host.');
-    for (const pid of fs.readdirSync(procRoot)) {
-        if (!/^\d+$/.test(pid)) continue;
+// macOS ps joins argv with spaces without shell quoting. Split at option boundaries,
+// preserving spaces, apostrophes and backslashes inside executable/workspace paths.
+// Never pass this text through a shell or interpret quotes as shell syntax.
+function backendFromPs(output, ownerPid, roots) {
+    for (const line of output.split('\n')) {
+        const row = /^\s*(\d+)\s+(\d+) (.*)$/.exec(line);
+        if (!row || Number(row[2]) !== ownerPid) continue;
+        const args = row[3].trimStart().split(/ (?=--[a-zA-Z][\w-]*(?:[= ]|$))/);
+        const backend = backendFromProcess(args.flatMap(arg => {
+            const separate = /^(--[\w-]+) (.*)$/.exec(arg);
+            return separate ? separate.slice(1) : [arg];
+        }), Number(row[2]), ownerPid, roots);
+        if (backend) return { ...backend, pid: Number(row[1]) };
+    }
+}
+
+function discoverBackend(ownerPid, roots, { platform = process.platform, procRoot = '/proc', exec = execFileSync } = {}) {
+    if (platform === 'darwin') {
+        let output;
         try {
-            const base = path.join(procRoot, pid);
-            const status = fs.readFileSync(path.join(base, 'status'), 'utf8');
-            const parent = Number(/^PPid:\s+(\d+)/m.exec(status)?.[1]);
-            if (parent !== ownerPid) continue;
-            const args = fs.readFileSync(path.join(base, 'cmdline'), 'utf8').split('\0').filter(Boolean);
-            const backend = backendFromProcess(args, parent, ownerPid, roots);
-            if (backend) return { ...backend, pid: Number(pid) };
-        } catch { /* Processes can exit during discovery. */ }
+            output = exec('/bin/ps', ['-ww', '-axo', 'pid=,ppid=,command='], {
+                encoding: 'utf8', timeout: 3000, maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe']
+            });
+        } catch {
+            // Child-process errors may include stdout (and therefore backend tokens).
+            throw new Error('Could not inspect macOS processes. Check that /bin/ps is permitted.');
+        }
+        const backend = backendFromPs(output, ownerPid, roots);
+        if (backend) return backend;
+    } else if (platform === 'linux') {
+        for (const pid of fs.readdirSync(procRoot)) {
+            if (!/^\d+$/.test(pid)) continue;
+            try {
+                const base = path.join(procRoot, pid);
+                const status = fs.readFileSync(path.join(base, 'status'), 'utf8');
+                const parent = Number(/^PPid:\s+(\d+)/m.exec(status)?.[1]);
+                if (parent !== ownerPid) continue;
+                const args = fs.readFileSync(path.join(base, 'cmdline'), 'utf8').split('\0').filter(Boolean);
+                const backend = backendFromProcess(args, parent, ownerPid, roots);
+                if (backend) return { ...backend, pid: Number(pid) };
+            } catch { /* Processes can exit during discovery. */ }
+        }
+    } else {
+        throw new Error(`Unsupported extension host: ${platform}. Use a local macOS or Linux extension host.`);
     }
     const error = new Error('No Antigravity backend in this window. Open the Antigravity sidebar.');
     error.code = 'BACKEND_NOT_READY';
     throw error;
+}
+
+function isProcessRunning(pid, kill = process.kill) {
+    try { kill(pid, 0); return true; }
+    catch (error) { return error.code !== 'ESRCH'; }
 }
 
 function rpc(backend, method, body) {
@@ -71,7 +114,10 @@ function rpc(backend, method, body) {
 function belongsToWorkspace(summary, roots) {
     const uris = summary.workspaces?.map(item => item.workspaceFolderAbsoluteUri) || [];
     if (!uris.length) return false;
-    try { return uris.every(uri => roots.includes(path.resolve(fileURLToPath(uri)))); }
+    try {
+        const canonicalRoots = roots.map(canonicalPath);
+        return uris.every(uri => canonicalRoots.includes(canonicalPath(fileURLToPath(uri))));
+    }
     catch { return false; }
 }
 
@@ -195,4 +241,4 @@ class Acceptor {
     }
 }
 
-module.exports = { backendFromProcess, discoverBackend, rpc, belongsToWorkspace, pendingCommand, approvalBody, isVerified, Acceptor };
+module.exports = { backendFromProcess, backendFromPs, discoverBackend, isProcessRunning, rpc, belongsToWorkspace, pendingCommand, approvalBody, isVerified, Acceptor };

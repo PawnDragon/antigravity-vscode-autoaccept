@@ -170,5 +170,5 @@ test('empty proto maps are idle, while malformed responses remain errors', async
 test('a backend that has not started is an expected waiting state', t => {
     const proc = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-sidebar-proc-'));
     t.after(() => fs.rmSync(proc, { recursive: true, force: true }));
-    assert.throws(() => discoverBackend(42, roots, proc), error => error.code === 'BACKEND_NOT_READY');
+    assert.throws(() => discoverBackend(42, roots, { platform: 'linux', procRoot: proc }), error => error.code === 'BACKEND_NOT_READY');
 });

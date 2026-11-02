@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4
+
+- Automatically discover the current window's Antigravity backend on macOS as well as Linux.
+- Keep installation, configuration, commands, and status identical across supported platforms.
+- Use portable backend liveness checks to recover after a backend exits.
+- Preserve spaces, Unicode, and literal quotes in macOS workspace paths; resolve filesystem aliases when matching workspaces.
+- Add platform discovery regressions and run CI on both macOS and Linux.
+
 ## 0.1.3
 
 - Remove the SSH prerequisite from both READMEs and the Marketplace description.

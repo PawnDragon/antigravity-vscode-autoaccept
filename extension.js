@@ -3,7 +3,7 @@
 // Status-bar interaction adapted from Ezra.auto-accept 1.2.0 (MIT; see LICENSE).
 const vscode = require('vscode');
 const path = require('node:path');
-const { discoverBackend, rpc, Acceptor } = require('./core');
+const { discoverBackend, isProcessRunning, rpc, Acceptor } = require('./core');
 
 function activate(context) {
     const output = vscode.window.createOutputChannel('Antigravity Sidebar Auto Accept');
@@ -41,7 +41,7 @@ function activate(context) {
             const waiting = error.code === 'BACKEND_NOT_READY';
             if (message !== lastError) { log(`${waiting ? 'WAITING' : 'ERROR'}: ${message}`); lastError = message; }
             if (enabled) paint(waiting ? 'WAITING' : 'ERROR', `${message}. Open Antigravity Sidebar Auto Accept: Show Logs.`);
-            if (backend && !require('node:fs').existsSync(`/proc/${backend.pid}`)) { backend = undefined; acceptor = undefined; }
+            if (backend && !isProcessRunning(backend.pid)) { backend = undefined; acceptor = undefined; }
         } finally { ticking = false; }
     }
     function configure() {

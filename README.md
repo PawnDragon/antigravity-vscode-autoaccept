@@ -46,6 +46,7 @@ After an update, run **Developer: Reload Window** when your current task has fin
 - **Visible results** — distinguishes submitted requests from verified approvals.
 - **Long-conversation support** — requests compact responses and skips completed history.
 - **A simple switch** — no extra panel and no runtime package dependencies.
+- **Automatic platform support** — the same installation, settings, commands, and status on macOS and Linux; no platform mode to select.
 
 ## How It Works
 
@@ -79,11 +80,13 @@ Eligible commands run without your click, including commands that can access fil
 | --- | --- |
 | Official extension | `google.google-antigravity` 1.10.0; verified 2026-11-01 |
 | VS Code | 1.90 or later |
-| Extension host | Linux; supports local workspaces |
-| Local Windows/macOS host | Not implemented in this release |
+| Extension host | macOS and Linux; detected automatically, including local workspaces |
+| Local Windows host | Not implemented in this release |
 | Standalone Antigravity IDE | Not the target of this adapter |
 
 The adapter uses an internal endpoint. New Antigravity versions may require an update; this table records the tested version rather than promising compatibility with future releases.
+
+macOS uses the built-in process tools; Linux uses `/proc`. Both automatically locate the backend owned by this window. No additional runtime, OS-specific configuration, or mode switch is needed.
 
 ## Configuration
 
