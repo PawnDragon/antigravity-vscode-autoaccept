@@ -8,6 +8,9 @@
 
 [![MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 [![Antigravity](https://img.shields.io/badge/Antigravity-1.10.0%20tested-16a34a.svg)](#兼容性)
+[![macOS](https://img.shields.io/badge/macOS-supported-16a34a.svg)](#兼容性)
+[![Linux](https://img.shields.io/badge/Linux-supported-16a34a.svg)](#兼容性)
+[![Windows](https://img.shields.io/badge/Windows-supported-16a34a.svg)](#兼容性)
 
 [English](README.md) · **简体中文**
 
@@ -53,7 +56,7 @@
 - **展示实际结果**：区分已提交和后端已确认的授权。
 - **长会话支持**：请求精简响应，跳过已完成历史。
 - **保持简单**：一个开关，无额外面板，无运行时依赖。
-- **自动适配平台**：macOS 与 Linux 使用相同的安装步骤、设置、命令和状态栏，无需选择或切换平台模式。
+- **自动适配平台**：Windows、macOS 与 Linux 使用相同的安装步骤、设置、命令和状态栏，无需选择或切换平台模式。
 
 ## 工作原理
 
@@ -87,13 +90,12 @@
 | --- | --- |
 | 官方扩展 | `google.google-antigravity` 1.10.0，2026-11-01 验证 |
 | VS Code | 1.90 及以上 |
-| 扩展宿主 | macOS 和 Linux，自动识别，支持本地工作区 |
-| 本地 Windows 宿主 | 此版本未实现 |
+| 扩展宿主 | Windows、macOS 和 Linux，自动识别，支持本地工作区 |
 | 独立 Antigravity IDE | 非本插件目标 |
 
 插件使用内部接口，上游更新后可能需要再次适配。上表列出已验证版本，不保证所有未来版本均适用。
 
-macOS 使用系统自带的进程工具，Linux 使用 `/proc`，自动定位当前窗口所属的后端。无需安装额外运行环境、修改系统专属配置或切换模式。
+Windows 使用系统自带的 Windows PowerShell 和 `Get-CimInstance`，macOS 使用 `ps`，Linux 使用 `/proc`，自动定位当前窗口所属的后端。无需安装额外运行环境、修改系统专属配置或切换模式。
 
 ## 配置
 
@@ -132,6 +134,7 @@ macOS 使用系统自带的进程工具，Linux 使用 `/proc`，自动定位当
 | `WAITING` | 打开本窗口的 Antigravity 扩展，确认两个扩展均安装在同一扩展宿主。 |
 | `ON` 但仍有卡片 | 问题、非命令权限、明确 Ask 和 Hook 审批仍需手动处理。 |
 | `ERROR` | 运行 **Show Logs**，检查最后一条错误。 |
+| `Could not inspect Windows processes` | 检查系统策略是否允许 VS Code 调用 Windows PowerShell 和 `Get-CimInstance`。 |
 | 旧版 `response too large` | 更新至 0.1.1 或以上，并重载窗口。 |
 | 更新后仍像旧版 | 当前任务结束后执行 **Developer: Reload Window**。 |
 | 只有 `SUBMITTED` | 手动检查卡片，插件不会盲目重试结果不明的授权。 |
@@ -155,6 +158,12 @@ npm run package
 
 ```sh
 node probe.js <extension-host-pid> /path/to/workspace
+```
+
+Windows 下可用 `python package.py` 打包，检查连接时给工作区路径加引号：
+
+```powershell
+node probe.js <extension-host-pid> 'C:\path\to\workspace'
 ```
 
 ```text

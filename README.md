@@ -8,6 +8,9 @@ Built for the latest tested official Antigravity extension for VS Code.
 
 [![MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 [![Antigravity](https://img.shields.io/badge/Antigravity-1.10.0%20tested-16a34a.svg)](#compatibility)
+[![macOS](https://img.shields.io/badge/macOS-supported-16a34a.svg)](#compatibility)
+[![Linux](https://img.shields.io/badge/Linux-supported-16a34a.svg)](#compatibility)
+[![Windows](https://img.shields.io/badge/Windows-supported-16a34a.svg)](#compatibility)
 
 **English** · [简体中文](README.zh-CN.md)
 
@@ -55,7 +58,7 @@ is a separate installation rather than an automatic update of the old listing.
 - **Visible results** — distinguishes submitted requests from verified approvals.
 - **Long-conversation support** — requests compact responses and skips completed history.
 - **A simple switch** — no extra panel and no runtime package dependencies.
-- **Automatic platform support** — the same installation, settings, commands, and status on macOS and Linux; no platform mode to select.
+- **Automatic platform support** — the same installation, settings, commands, and status on Windows, macOS and Linux; no platform mode to select.
 
 ## How It Works
 
@@ -89,13 +92,12 @@ Eligible commands run without your click, including commands that can access fil
 | --- | --- |
 | Official extension | `google.google-antigravity` 1.10.0; verified 2026-11-01 |
 | VS Code | 1.90 or later |
-| Extension host | macOS and Linux; detected automatically, including local workspaces |
-| Local Windows host | Not implemented in this release |
+| Extension host | Windows, macOS and Linux; detected automatically, including local workspaces |
 | Standalone Antigravity IDE | Not the target of this adapter |
 
 The adapter uses an internal endpoint. New Antigravity versions may require an update; this table records the tested version rather than promising compatibility with future releases.
 
-macOS uses the built-in process tools; Linux uses `/proc`. Both automatically locate the backend owned by this window. No additional runtime, OS-specific configuration, or mode switch is needed.
+Windows uses built-in Windows PowerShell and `Get-CimInstance`; macOS uses `ps`; Linux uses `/proc`. All three automatically locate the backend owned by this window. No additional runtime, OS-specific configuration, or mode switch is needed.
 
 ## Configuration
 
@@ -134,6 +136,7 @@ When Ezra Auto Accept is present, this adapter attempts to stop its old command 
 | `WAITING` | Open Antigravity in this window; install both extensions in the same extension host. |
 | `ON`, but a card remains | Questions, non-command permissions, explicit Ask, and hook approvals stay manual. |
 | `ERROR` | Run **Show Logs** and inspect the last error. |
+| `Could not inspect Windows processes` | Check that Windows PowerShell and `Get-CimInstance` are permitted for VS Code. |
 | Old `response too large` | Upgrade to 0.1.1 or later and reload the window. |
 | An update behaves like the old version | Finish the task, then run **Developer: Reload Window**. |
 | `SUBMITTED` without `VERIFIED` | Inspect the card manually. Ambiguous submissions are not blindly retried. |
@@ -157,6 +160,12 @@ For a local build without npm, use `python3 package.py`. To check a connection w
 
 ```sh
 node probe.js <extension-host-pid> /path/to/workspace
+```
+
+On Windows, use `python package.py` for the Python build and quote the workspace path when probing:
+
+```powershell
+node probe.js <extension-host-pid> 'C:\path\to\workspace'
 ```
 
 ```text

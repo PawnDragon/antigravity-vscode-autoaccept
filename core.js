@@ -8,22 +8,26 @@ const { fileURLToPath } = require('node:url');
 
 const SERVICE = '/exa.language_server_pb.LanguageServerService/';
 
-function canonicalPath(value) {
-    const resolved = path.resolve(value);
-    try { return fs.realpathSync.native(resolved); }
-    catch { return resolved; }
+function canonicalPath(value, platform = process.platform) {
+    const paths = platform === 'win32' ? path.win32 : path.posix;
+    let resolved = paths.resolve(value);
+    try { resolved = fs.realpathSync.native(resolved); }
+    catch { /* A workspace can disappear while its backend is still running. */ }
+    return platform === 'win32' ? path.win32.normalize(resolved).toLowerCase() : resolved;
 }
 
-function backendFromProcess(args, parentPid, ownerPid, roots) {
-    if (parentPid !== ownerPid || path.basename(args[0] || '') !== 'agy' || !args.includes('--hub')) return;
+function backendFromProcess(args, parentPid, ownerPid, roots, { platform = process.platform } = {}) {
+    const executable = (platform === 'win32' ? path.win32 : path.posix).basename(args[0] || '');
+    const official = platform === 'win32' ? /^agy(?:\.exe)?$/i.test(executable) : executable === 'agy';
+    if (parentPid !== ownerPid || !official || !args.includes('--hub')) return;
     const value = name => {
         const inline = args.find(arg => arg.startsWith(`${name}=`));
         if (inline) return inline.slice(name.length + 1);
         const index = args.indexOf(name);
         return index < 0 ? undefined : args[index + 1];
     };
-    const dirs = args.filter(arg => arg.startsWith('--add-dir=')).map(arg => canonicalPath(arg.slice(10)));
-    const canonicalRoots = roots.map(canonicalPath);
+    const dirs = args.filter(arg => arg.startsWith('--add-dir=')).map(arg => canonicalPath(arg.slice(10), platform));
+    const canonicalRoots = roots.map(root => canonicalPath(root, platform));
     if (!dirs.length || !dirs.every(dir => canonicalRoots.includes(dir))) return;
     const port = Number(value('--hub-port'));
     const token = value('--csrf_token');
@@ -41,12 +45,57 @@ function backendFromPs(output, ownerPid, roots) {
         const backend = backendFromProcess(args.flatMap(arg => {
             const separate = /^(--[\w-]+) (.*)$/.exec(arg);
             return separate ? separate.slice(1) : [arg];
-        }), Number(row[2]), ownerPid, roots);
+        }), Number(row[2]), ownerPid, roots, { platform: 'darwin' });
         if (backend) return { ...backend, pid: Number(row[1]) };
     }
 }
 
+// Decode the Windows argv quoting used by native process creation, not shell syntax.
+// Backslashes are literal unless followed by a double quote; single quotes stay literal.
+// https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments
+function windowsArgv(commandLine) {
+    const args = [];
+    let index = 0;
+    while (index < commandLine.length) {
+        while (/[ \t]/.test(commandLine[index] || '') && index < commandLine.length) index++;
+        if (index === commandLine.length) break;
+        let arg = '';
+        let quoted = false;
+        while (index < commandLine.length) {
+            if (!quoted && /[ \t]/.test(commandLine[index])) break;
+            let slashes = 0;
+            while (commandLine[index] === '\\') { slashes++; index++; }
+            if (commandLine[index] === '"') {
+                arg += '\\'.repeat(Math.floor(slashes / 2));
+                if (slashes % 2) arg += '"';
+                else if (quoted && commandLine[index + 1] === '"') { arg += '"'; index++; }
+                else quoted = !quoted;
+                index++;
+            } else {
+                arg += '\\'.repeat(slashes);
+                if (index < commandLine.length && (quoted || !/[ \t]/.test(commandLine[index]))) arg += commandLine[index++];
+            }
+        }
+        args.push(arg);
+    }
+    return args;
+}
+
+function backendFromWindows(output, ownerPid, roots) {
+    // Windows PowerShell emits a single object for one result, and no text for none.
+    const decoded = output.trim() ? JSON.parse(output.replace(/^\uFEFF/, '')) : [];
+    const rows = Array.isArray(decoded) ? decoded : [decoded];
+    for (const row of rows) {
+        if (!row || !Number.isInteger(row.ProcessId) || row.ProcessId <= 0
+            || row.ParentProcessId !== ownerPid || typeof row.CommandLine !== 'string') continue;
+        const backend = backendFromProcess(windowsArgv(row.CommandLine), row.ParentProcessId, ownerPid, roots, { platform: 'win32' });
+        if (backend) return { ...backend, pid: row.ProcessId };
+    }
+}
+
 function discoverBackend(ownerPid, roots, { platform = process.platform, procRoot = '/proc', exec = execFileSync } = {}) {
+    // The PID is the only dynamic value in the Windows inspection script.
+    if (!Number.isSafeInteger(ownerPid) || ownerPid <= 0) throw new Error('Invalid extension host PID.');
     if (platform === 'darwin') {
         let output;
         try {
@@ -68,12 +117,29 @@ function discoverBackend(ownerPid, roots, { platform = process.platform, procRoo
                 const parent = Number(/^PPid:\s+(\d+)/m.exec(status)?.[1]);
                 if (parent !== ownerPid) continue;
                 const args = fs.readFileSync(path.join(base, 'cmdline'), 'utf8').split('\0').filter(Boolean);
-                const backend = backendFromProcess(args, parent, ownerPid, roots);
+                const backend = backendFromProcess(args, parent, ownerPid, roots, { platform });
                 if (backend) return { ...backend, pid: Number(pid) };
             } catch { /* Processes can exit during discovery. */ }
         }
+    } else if (platform === 'win32') {
+        const powershell = path.win32.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+        const script = "$ErrorActionPreference = 'Stop'; [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); "
+            + `Get-CimInstance Win32_Process -Filter "ParentProcessId = ${ownerPid} AND Name = 'agy.exe'" `
+            + '| Select-Object ProcessId, ParentProcessId, CommandLine | ConvertTo-Json -Compress';
+        let backend;
+        try {
+            const output = exec(powershell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script], {
+                encoding: 'utf8', timeout: 5000, maxBuffer: 8 * 1024 * 1024,
+                windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
+            });
+            backend = backendFromWindows(output, ownerPid, roots);
+        } catch {
+            // Neither subprocess failures nor JSON parse errors may expose backend tokens.
+            throw new Error('Could not inspect Windows processes. Check that Windows PowerShell and Get-CimInstance are permitted.');
+        }
+        if (backend) return backend;
     } else {
-        throw new Error(`Unsupported extension host: ${platform}. Use a local macOS or Linux extension host.`);
+        throw new Error(`Unsupported extension host: ${platform}. Use a Windows, macOS or Linux extension host.`);
     }
     const error = new Error('No Antigravity backend in this window. Open the Antigravity extension.');
     error.code = 'BACKEND_NOT_READY';
@@ -111,12 +177,12 @@ function rpc(backend, method, body) {
     });
 }
 
-function belongsToWorkspace(summary, roots) {
+function belongsToWorkspace(summary, roots, { platform = process.platform } = {}) {
     const uris = summary.workspaces?.map(item => item.workspaceFolderAbsoluteUri) || [];
     if (!uris.length) return false;
     try {
-        const canonicalRoots = roots.map(canonicalPath);
-        return uris.every(uri => canonicalRoots.includes(canonicalPath(fileURLToPath(uri))));
+        const canonicalRoots = roots.map(root => canonicalPath(root, platform));
+        return uris.every(uri => canonicalRoots.includes(canonicalPath(fileURLToPath(uri, { windows: platform === 'win32' }), platform)));
     }
     catch { return false; }
 }
@@ -241,4 +307,4 @@ class Acceptor {
     }
 }
 
-module.exports = { backendFromProcess, backendFromPs, discoverBackend, isProcessRunning, rpc, belongsToWorkspace, pendingCommand, approvalBody, isVerified, Acceptor };
+module.exports = { backendFromProcess, backendFromPs, backendFromWindows, windowsArgv, discoverBackend, isProcessRunning, rpc, belongsToWorkspace, pendingCommand, approvalBody, isVerified, Acceptor };

@@ -70,7 +70,7 @@ test('backend and conversation workspace matching resolve filesystem aliases', t
     const actual = path.join(directory, 'actual workspace');
     const alias = path.join(directory, 'alias');
     fs.mkdirSync(actual);
-    fs.symlinkSync(actual, alias);
+    fs.symlinkSync(actual, alias, process.platform === 'win32' ? 'junction' : 'dir');
     const argv = [...args.filter(arg => !arg.startsWith('--add-dir=')), '--add-dir=' + actual];
     assert.ok(backendFromProcess(argv, 42, 42, [alias]));
     assert.equal(belongsToWorkspace({ workspaces: [{ workspaceFolderAbsoluteUri: pathToFileURL(actual).href }] }, [alias]), true);

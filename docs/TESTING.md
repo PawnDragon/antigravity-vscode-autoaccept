@@ -5,10 +5,13 @@
 Automated checks cover backend ownership, workspace matching, HTTP transport,
 one-time approvals, prompt revalidation, stopping, ambiguous timeouts, explicit
 Ask exclusions, long-history cursors, empty maps, and backend startup states.
-Platform fixtures exercise Linux `/proc` and macOS `ps` discovery on either OS,
+Platform fixtures exercise Linux `/proc`, macOS `ps` and Windows CIM discovery on every OS,
 including process ownership, multiple roots, spaces, Unicode, literal quotes,
 filesystem aliases, subprocess failures without token disclosure, and portable
-backend liveness. CI runs Node.js 22 and 24 on both macOS and Linux.
+backend liveness. Windows fixtures additionally cover native argument quoting,
+escaped quotes and trailing backslashes, `agy.exe`, drive-letter and path casing,
+UNC file URIs, and malformed CIM JSON without token disclosure.
+CI runs Node.js 22 and 24 on Windows, macOS and Linux.
 Rename regressions cover the default OFF state, legacy settings, explicit new
 settings taking priority (including OFF overriding legacy ON), and setting scope
 precedence. Old command IDs forward to the new commands for existing bindings.
@@ -37,6 +40,18 @@ Stopping only that test window's backend also exercised automatic recovery:
 the official backend restarted after about three seconds and the adapter logged
 CONNECTED followed by READY without changing settings or selecting a mode.
 
-The runtime automatically supports local macOS and Linux hosts with the same
-configuration and commands. Local Windows hosts are not implemented. The internal endpoint may change.
+On 2026-11-02, version 0.1.8 was tested locally on Windows with Node.js 22.17.0.
+The native Windows integration test starts a temporary `agy.exe` fixture process
+and discovers it through the real Windows PowerShell/CIM query. Its workspace
+contains Chinese characters, spaces, an apostrophe and literal shell characters.
+A local HTTP fixture verifies the complete recheck/Allow Once/VERIFIED flow,
+prevents duplicate submissions, rejects a different workspace, and confirms
+BACKEND_NOT_READY after the fixture process exits. Fixture commands are never
+executed. Directory junction resolution is also covered by the discovery tests.
+A separate read-only `probe.js` check connected successfully to this project's
+real official Antigravity 1.10.0 Windows backend. That backend had no loaded
+conversations, so real command approval was not exercised on Windows.
+
+The runtime automatically supports local Windows, macOS and Linux hosts with the same
+configuration and commands. The internal endpoint may change.
 Distinguish SUBMITTED from VERIFIED when validating an upstream update.

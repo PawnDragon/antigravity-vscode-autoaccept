@@ -6,9 +6,10 @@ const { backendFromProcess, discoverBackend, rpc, pendingCommand, belongsToWorks
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
-const roots = ['/workspaces/example'];
-const summary = { status: 'CASCADE_RUN_STATUS_RUNNING', trajectoryId: 'trajectory-1', stepCount: 1, workspaces: [{ workspaceFolderAbsoluteUri: 'file://' + roots[0] }] };
+const roots = [path.resolve('test-workspace')];
+const summary = { status: 'CASCADE_RUN_STATUS_RUNNING', trajectoryId: 'trajectory-1', stepCount: 1, workspaces: [{ workspaceFolderAbsoluteUri: pathToFileURL(roots[0]).href }] };
 const pending = () => ({ type: 'CORTEX_STEP_TYPE_RUN_COMMAND', status: 'CORTEX_STEP_STATUS_WAITING', requestedInteraction: { permission: { resource: { action: 'command', target: "printf 'autoaccept-smoke\\n'" }, triggerSource: { type: 'TYPE_DEFAULT_FALLBACK' } } } });
 const clone = value => structuredClone(value);
 

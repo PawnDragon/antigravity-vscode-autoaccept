@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.8
+
+- Automatically discover this window's Antigravity backend on Windows using built-in Windows PowerShell and CIM.
+- Handle native Windows command-line quoting, executable suffixes, drive-letter casing, directory junctions and file URIs.
+- Add Windows discovery regressions and a native process/HTTP integration test for one-time approval verification and backend exit.
+- Run CI on Windows, macOS and Linux; make existing approval fixtures portable to Windows.
+
 ## 0.1.7
 
 - Export the extension icon at 512 × 512 pixels to meet Marketplace dimension limits.
