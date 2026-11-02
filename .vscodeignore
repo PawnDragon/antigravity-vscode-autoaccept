@@ -10,5 +10,6 @@ package-lock.json
 package.py
 probe.js
 assets/icon-prompt.txt
+assets/icon-source.png
 VERIFICATION.md
 *.vsix

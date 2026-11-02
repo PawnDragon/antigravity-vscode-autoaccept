@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7
+
+- Export the extension icon at 512 × 512 pixels to meet Marketplace dimension limits.
+- Retain the high-resolution icon source outside the installation package.
+
 ## 0.1.6
 
 - Add the Antigravity-inspired extension icon with a large green approval check.

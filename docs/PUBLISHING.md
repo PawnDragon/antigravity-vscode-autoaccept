@@ -27,8 +27,8 @@ gh repo create PawnDragon/antigravity-vscode-autoaccept --public --source=. --re
 CI runs checks and packages the extension. Tag the matching version to release:
 
 ```sh
-git tag v0.1.6
-git push origin v0.1.6
+git tag v0.1.7
+git push origin v0.1.7
 ```
 
 The release workflow checks the version, runs tests, packages with official
