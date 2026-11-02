@@ -43,8 +43,9 @@ The release workflow checks the version, runs tests, packages with official
    - Repository: `antigravity-vscode-autoaccept`
    - Workflow: `publish.yml`
    - Environment: leave empty.
-   After renaming the repository, update any existing Trusted Publishing policy
-   to the new repository name before running the publishing workflow.
+   Existing policies validate the permanent GitHub repository ID, so renaming
+   the same repository preserves its publishing identity even if the policy UI
+   still displays the previous name. Use the new name when creating a policy.
 3. Push the configured manifest and a passing build.
 4. Run **Publish to Visual Studio Marketplace** in Actions. It uses OIDC and
    `vsce publish --oidc`, with no PAT committed.
