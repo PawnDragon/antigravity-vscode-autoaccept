@@ -7,7 +7,7 @@
 适配最新已验证的 Antigravity VS Code 扩展。
 
 [![MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
-[![Antigravity](https://img.shields.io/badge/Antigravity-1.10.0%20tested-16a34a.svg)](#兼容性)
+[![Antigravity](https://img.shields.io/badge/Antigravity-1.12.0%20tested-16a34a.svg)](#兼容性)
 [![macOS](https://img.shields.io/badge/macOS-supported-16a34a.svg)](#兼容性)
 [![Linux](https://img.shields.io/badge/Linux-supported-16a34a.svg)](#兼容性)
 [![Windows](https://img.shields.io/badge/Windows-supported-16a34a.svg)](#兼容性)
@@ -17,6 +17,10 @@
 [快速开始](#快速开始) · [主要功能](#主要功能) · [工作原理](#工作原理) · [配置](#配置) · [排错](#排错) · [开发](#开发)
 
 </div>
+
+## News / 更新动态
+
+- **2026-11-15 · v0.1.9** — 已适配本机最新安装的 **Antigravity 扩展 1.12.0 / AGY CLI 1.5.9**，修复 AGY 不再通过命令行传递 CSRF token 后无法监控后端的问题。**Windows、macOS、Linux** 统一使用官方扩展导出的连接信息；本次更新在 **Linux** 上完成测试。
 
 ---
 
@@ -88,14 +92,14 @@
 
 | 组件 | 支持范围 |
 | --- | --- |
-| 官方扩展 | `google.google-antigravity` 1.10.0，2026-11-01 验证 |
+| 官方扩展 | `google.google-antigravity` 1.12.0 / AGY CLI 1.5.9，2026-11-15 在 Linux 验证连接 |
 | VS Code | 1.90 及以上 |
 | 扩展宿主 | Windows、macOS 和 Linux，自动识别，支持本地工作区 |
 | 独立 Antigravity IDE | 非本插件目标 |
 
 插件使用内部接口，上游更新后可能需要再次适配。上表列出已验证版本，不保证所有未来版本均适用。
 
-Windows 使用系统自带的 Windows PowerShell 和 `Get-CimInstance`，macOS 使用 `ps`，Linux 使用 `/proc`，自动定位当前窗口所属的后端。无需安装额外运行环境、修改系统专属配置或切换模式。
+Windows 使用系统自带的 Windows PowerShell 和 `Get-CimInstance`，macOS 使用 `ps`，Linux 使用 `/proc`，自动定位当前窗口所属的后端，并将端口与官方扩展导出的连接信息匹配。CLI 1.5.2 及以上改为通过环境变量传递 CSRF token，三个平台统一读取官方扩展导出的 token；Linux 独立连接检查还可从 `/proc` 读取后端环境变量。旧版命令行 token 继续兼容。无需安装额外运行环境、修改系统专属配置或切换模式。
 
 ## 配置
 
@@ -160,7 +164,9 @@ npm run package
 node probe.js <extension-host-pid> /path/to/workspace
 ```
 
-Windows 下可用 `python package.py` 打包，检查连接时给工作区路径加引号：
+Linux 独立连接检查同时支持命令行和环境变量 token。Windows、macOS 使用 CLI 1.5.2 及以上时，请在 VS Code 中运行 **Antigravity VS Code Auto Accept: Check Connection**，以读取官方扩展导出的连接信息。
+
+Windows 下可用 `python package.py` 打包；旧版 CLI 通过命令行传递 token 时，独立检查连接需给工作区路径加引号：
 
 ```powershell
 node probe.js <extension-host-pid> 'C:\path\to\workspace'

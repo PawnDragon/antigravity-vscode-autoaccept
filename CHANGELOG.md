@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.9
+
+- Adapt to official Antigravity 1.12.0 / AGY CLI 1.5.9, which no longer includes the CSRF token in process arguments.
+- Use the official extension's exported token and matching port on Windows, macOS and Linux while retaining process ownership and workspace checks.
+- Keep older command-line tokens compatible and support environment tokens in standalone Linux probes.
+- Add modern authentication regressions and exercise native process discovery, one-time approval verification and backend exit on Linux.
+
 ## 0.1.8
 
 - Automatically discover this window's Antigravity backend on Windows using built-in Windows PowerShell and CIM.

@@ -7,7 +7,7 @@
 Built for the latest tested official Antigravity extension for VS Code.
 
 [![MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
-[![Antigravity](https://img.shields.io/badge/Antigravity-1.10.0%20tested-16a34a.svg)](#compatibility)
+[![Antigravity](https://img.shields.io/badge/Antigravity-1.12.0%20tested-16a34a.svg)](#compatibility)
 [![macOS](https://img.shields.io/badge/macOS-supported-16a34a.svg)](#compatibility)
 [![Linux](https://img.shields.io/badge/Linux-supported-16a34a.svg)](#compatibility)
 [![Windows](https://img.shields.io/badge/Windows-supported-16a34a.svg)](#compatibility)
@@ -17,6 +17,10 @@ Built for the latest tested official Antigravity extension for VS Code.
 [Quick Start](#quick-start) · [Features](#features) · [How It Works](#how-it-works) · [Configuration](#configuration) · [Troubleshooting](#troubleshooting) · [Development](#development)
 
 </div>
+
+## News
+
+- **2026-11-15 · v0.1.9** — Adapted to the latest locally installed Antigravity extension **1.12.0 / AGY CLI 1.5.9**. Fixes backend monitoring after AGY moved its CSRF token out of command-line arguments. The adapter uses the official extension's exported connection details on **Windows, macOS and Linux**. This update was tested on **Linux**.
 
 ---
 
@@ -90,14 +94,14 @@ Eligible commands run without your click, including commands that can access fil
 
 | Component | Support |
 | --- | --- |
-| Official extension | `google.google-antigravity` 1.10.0; verified 2026-11-01 |
+| Official extension | `google.google-antigravity` 1.12.0 / AGY CLI 1.5.9; connection verified on Linux 2026-11-15 |
 | VS Code | 1.90 or later |
 | Extension host | Windows, macOS and Linux; detected automatically, including local workspaces |
 | Standalone Antigravity IDE | Not the target of this adapter |
 
 The adapter uses an internal endpoint. New Antigravity versions may require an update; this table records the tested version rather than promising compatibility with future releases.
 
-Windows uses built-in Windows PowerShell and `Get-CimInstance`; macOS uses `ps`; Linux uses `/proc`. All three automatically locate the backend owned by this window. No additional runtime, OS-specific configuration, or mode switch is needed.
+Windows uses built-in Windows PowerShell and `Get-CimInstance`; macOS uses `ps`; Linux uses `/proc`. All three automatically locate the backend owned by this window and match its port to the official extension's exported connection details. CLI 1.5.2 and later pass the CSRF token through the environment instead of the command line. The adapter uses the exported token on all three platforms, with a Linux `/proc` environment fallback for standalone probes. Older command-line tokens remain supported. No additional runtime, OS-specific configuration, or mode switch is needed.
 
 ## Configuration
 
@@ -162,7 +166,9 @@ For a local build without npm, use `python3 package.py`. To check a connection w
 node probe.js <extension-host-pid> /path/to/workspace
 ```
 
-On Windows, use `python package.py` for the Python build and quote the workspace path when probing:
+On Linux, the standalone probe supports both command-line and environment tokens. On Windows and macOS with CLI 1.5.2 or later, use **Antigravity VS Code Auto Accept: Check Connection** inside VS Code so the adapter can access the official extension's exports.
+
+On Windows, use `python package.py` for the Python build. With older CLI versions that expose a command-line token, quote the workspace path when probing:
 
 ```powershell
 node probe.js <extension-host-pid> 'C:\path\to\workspace'

@@ -11,15 +11,16 @@ const { spawn } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
 const { discoverBackend, isProcessRunning, rpc, Acceptor } = require('../core');
 
-test('native Windows CIM discovery, allow-once verification and backend exit', {
-    skip: process.platform !== 'win32', timeout: 20000
+test(`native ${process.platform} environment-token discovery, allow-once verification and backend exit`, {
+    skip: !['linux', 'win32'].includes(process.platform), timeout: 20000
 }, async t => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-vscode-win-'));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-vscode-native-'));
     // A junction in discovery.test.js covers aliases; this path exercises real argv encoding.
     const workspace = path.join(directory, "中文 project's folder & $literal");
     fs.mkdirSync(workspace);
-    const executable = path.join(directory, 'agy.exe');
-    fs.copyFileSync(process.execPath, executable);
+    const executable = path.join(directory, process.platform === 'win32' ? 'agy.exe' : 'agy');
+    if (process.platform === 'win32') fs.copyFileSync(process.execPath, executable);
+    else fs.symlinkSync(process.execPath, executable);
     const worker = path.join(directory, 'worker.js');
     fs.writeFileSync(worker, 'setInterval(() => {}, 1000);\n');
     let child;
@@ -32,7 +33,7 @@ test('native Windows CIM discovery, allow-once verification and backend exit', {
         fs.rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     });
 
-    const token = 'windows-integration-fixture';
+    const token = 'environment-integration-fixture';
     const request = { permission: { resource: { action: 'command', target: 'fixture only; never executed' }, triggerSource: { type: 'TYPE_DEFAULT_FALLBACK' } } };
     let step = { status: 'CORTEX_STEP_STATUS_WAITING', requestedInteraction: request };
     let submissions = 0;
@@ -44,13 +45,13 @@ test('native Windows CIM discovery, allow-once verification and backend exit', {
         let response;
         switch (req.url.split('/').pop()) {
             case 'GetAllCascadeTrajectories':
-                response = { trajectorySummaries: { fixture: { status: 'CASCADE_RUN_STATUS_RUNNING', trajectoryId: 'windows-fixture', stepCount: 1, workspaces: [{ workspaceFolderAbsoluteUri: pathToFileURL(workspace.toLowerCase()).href }] } } };
+                response = { trajectorySummaries: { fixture: { status: 'CASCADE_RUN_STATUS_RUNNING', trajectoryId: 'native-fixture', stepCount: 1, workspaces: [{ workspaceFolderAbsoluteUri: pathToFileURL(process.platform === 'win32' ? workspace.toLowerCase() : workspace).href }] } } };
                 break;
             case 'GetCascadeTrajectorySteps':
                 response = { steps: [step] };
                 break;
             case 'HandleCascadeUserInteraction':
-                assert.deepEqual(body, { cascadeId: 'fixture', interaction: { trajectoryId: 'windows-fixture', stepIndex: 0, permission: { allow: true, scope: 'PERMISSION_SCOPE_ONCE' } } });
+                assert.deepEqual(body, { cascadeId: 'fixture', interaction: { trajectoryId: 'native-fixture', stepIndex: 0, permission: { allow: true, scope: 'PERMISSION_SCOPE_ONCE' } } });
                 submissions++;
                 step = { status: 'CORTEX_STEP_STATUS_DONE', completedInteractions: [{ request, response: body.interaction }] };
                 response = {};
@@ -64,15 +65,20 @@ test('native Windows CIM discovery, allow-once verification and backend exit', {
     t.after(() => new Promise(resolve => server.close(resolve)));
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const port = server.address().port;
-    child = spawn(executable, [worker, '--hub', `--hub-port=${port}`, `--csrf_token=${token}`, `--add-dir=${workspace}`], {
-        windowsHide: true, stdio: 'ignore'
+    child = spawn(executable, [worker, '--hub', `--hub-port=${port}`, `--add-dir=${workspace}`], {
+        env: { ...process.env, ANTIGRAVITY_SERVER_CSRF_TOKEN: token }, windowsHide: true, stdio: 'ignore'
     });
     await once(child, 'spawn');
 
-    const backend = discoverBackend(process.pid, [workspace]);
+    const connection = { port, csrfToken: token };
+    const backend = discoverBackend(process.pid, [workspace], { connection });
     assert.deepEqual(backend, { pid: child.pid, port, token });
+    if (process.platform === 'linux') {
+        assert.deepEqual(discoverBackend(process.pid, [workspace]), backend);
+        assert.ok(!fs.readFileSync(`/proc/${child.pid}/cmdline`, 'utf8').includes(token));
+    }
     assert.equal(isProcessRunning(backend.pid), true);
-    assert.throws(() => discoverBackend(process.pid, [workspace + '-other']), error => error.code === 'BACKEND_NOT_READY');
+    assert.throws(() => discoverBackend(process.pid, [workspace + '-other'], { connection }), error => error.code === 'BACKEND_NOT_READY');
     const messages = [];
     const acceptor = new Acceptor({ roots: [workspace], call: (method, body) => rpc(backend, method, body), log: message => messages.push(message) });
     assert.equal((await acceptor.scan()).verified, 1);
@@ -84,5 +90,5 @@ test('native Windows CIM discovery, allow-once verification and backend exit', {
     child.kill();
     await exited;
     assert.equal(isProcessRunning(backend.pid), false);
-    assert.throws(() => discoverBackend(process.pid, [workspace]), error => error.code === 'BACKEND_NOT_READY');
+    assert.throws(() => discoverBackend(process.pid, [workspace], { connection }), error => error.code === 'BACKEND_NOT_READY');
 });

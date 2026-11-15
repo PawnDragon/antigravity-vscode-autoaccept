@@ -46,6 +46,28 @@ test('macOS uses bounded ps discovery and returns the same backend shape as Linu
     assert.throws(() => discoverBackend(42, roots, { platform: 'darwin', exec: () => '' }), error => error.code === 'BACKEND_NOT_READY');
 });
 
+test('macOS discovers environment-token backends using the official extension exports', () => {
+    const modernArgs = args.filter(arg => !arg.startsWith('--csrf_token='));
+    const connection = { port: 12345, csrfToken: 'exported-fixture-only' };
+    const output = row(7, 99, modernArgs) + row(43, 42, modernArgs);
+    assert.deepEqual(discoverBackend(42, roots, { platform: 'darwin', connection, exec: () => output }),
+        { pid: 43, port: 12345, token: connection.csrfToken });
+    for (const invalid of [undefined, { ...connection, port: 54321 }, { port: 12345 }, { ...connection, csrfToken: {} }]) {
+        assert.equal(backendFromPs(output, 42, roots, { connection: invalid }), undefined);
+    }
+    assert.equal(backendFromPs(output, 42, ['/another/workspace'], { connection }), undefined);
+});
+
+test('environment token fallback is read only after validating backend identity, workspace and port', () => {
+    const modernArgs = args.filter(arg => !arg.startsWith('--csrf_token='));
+    const options = { platform: 'darwin', readToken: () => assert.fail('Must not read unrelated process credentials') };
+    assert.equal(backendFromProcess(modernArgs, 99, 42, roots, options), undefined);
+    assert.equal(backendFromProcess(['/bin/other', ...modernArgs.slice(1)], 42, 42, roots, options), undefined);
+    assert.equal(backendFromProcess(modernArgs, 42, 42, ['/another/workspace'], options), undefined);
+    assert.equal(backendFromProcess(modernArgs.map(arg => arg.replace('12345', '99999')), 42, 42, roots, options), undefined);
+    assert.equal(backendFromProcess(args, 42, 42, roots, options).token, 'fixture-only');
+});
+
 test('macOS process inspection errors never expose subprocess output or tokens', () => {
     assert.throws(() => discoverBackend(42, roots, { platform: 'darwin', exec: () => {
         throw new Error('ps failed: --csrf_token=private-token');
@@ -62,6 +84,27 @@ test('Linux discovery remains supported on every test host', t => {
         fs.writeFileSync(path.join(directory, 'cmdline'), args.join('\0') + '\0');
     }
     assert.deepEqual(discoverBackend(42, roots, { platform: 'linux', procRoot }), { pid: 43, port: 12345, token: 'fixture-only' });
+});
+
+test('Linux discovers environment tokens and prefers matching official exports without reading environ', t => {
+    const procRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ag-vscode-env-'));
+    t.after(() => fs.rmSync(procRoot, { recursive: true, force: true }));
+    const directory = path.join(procRoot, '43');
+    fs.mkdirSync(directory);
+    fs.writeFileSync(path.join(directory, 'status'), 'Name:\tagy\nPPid:\t42\n');
+    fs.writeFileSync(path.join(directory, 'cmdline'), args.filter(arg => !arg.startsWith('--csrf_token=')).join('\0') + '\0');
+    const environment = path.join(directory, 'environ');
+    const options = { platform: 'linux', procRoot };
+    const notReady = error => error.code === 'BACKEND_NOT_READY' && !error.message.includes('private-fixture');
+    assert.throws(() => discoverBackend(42, roots, options), notReady);
+    fs.writeFileSync(environment, 'OTHER_ANTIGRAVITY_SERVER_CSRF_TOKEN=private-fixture\0');
+    assert.throws(() => discoverBackend(42, roots, options), notReady);
+    fs.writeFileSync(environment, 'OTHER=value\0ANTIGRAVITY_SERVER_CSRF_TOKEN=private-fixture=with-equals\0');
+    assert.deepEqual(discoverBackend(42, roots, options), { pid: 43, port: 12345, token: 'private-fixture=with-equals' });
+    fs.unlinkSync(environment);
+    const connection = { port: 12345, csrfToken: 'exported-fixture-only' };
+    assert.deepEqual(discoverBackend(42, roots, { ...options, connection }), { pid: 43, port: 12345, token: connection.csrfToken });
+    assert.throws(() => discoverBackend(42, ['/another/workspace'], { ...options, connection }), notReady);
 });
 
 test('backend and conversation workspace matching resolve filesystem aliases', t => {

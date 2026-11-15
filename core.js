@@ -7,6 +7,7 @@ const { execFileSync } = require('node:child_process');
 const { fileURLToPath } = require('node:url');
 
 const SERVICE = '/exa.language_server_pb.LanguageServerService/';
+const CSRF_ENV = 'ANTIGRAVITY_SERVER_CSRF_TOKEN=';
 
 function canonicalPath(value, platform = process.platform) {
     const paths = platform === 'win32' ? path.win32 : path.posix;
@@ -16,7 +17,7 @@ function canonicalPath(value, platform = process.platform) {
     return platform === 'win32' ? path.win32.normalize(resolved).toLowerCase() : resolved;
 }
 
-function backendFromProcess(args, parentPid, ownerPid, roots, { platform = process.platform } = {}) {
+function backendFromProcess(args, parentPid, ownerPid, roots, { platform = process.platform, connection, readToken } = {}) {
     const executable = (platform === 'win32' ? path.win32 : path.posix).basename(args[0] || '');
     const official = platform === 'win32' ? /^agy(?:\.exe)?$/i.test(executable) : executable === 'agy';
     if (parentPid !== ownerPid || !official || !args.includes('--hub')) return;
@@ -30,14 +31,16 @@ function backendFromProcess(args, parentPid, ownerPid, roots, { platform = proce
     const canonicalRoots = roots.map(root => canonicalPath(root, platform));
     if (!dirs.length || !dirs.every(dir => canonicalRoots.includes(dir))) return;
     const port = Number(value('--hub-port'));
-    const token = value('--csrf_token');
-    if (Number.isInteger(port) && port > 0 && port < 65536 && token) return { port, token };
+    if (!Number.isInteger(port) || port <= 0 || port >= 65536) return;
+    // CLI 1.5.2+ hides the token from argv; the official extension exports it on all three OSes.
+    const token = (connection?.port === port ? connection.csrfToken : undefined) || value('--csrf_token') || readToken?.();
+    if (typeof token === 'string' && token) return { port, token };
 }
 
 // macOS ps joins argv with spaces without shell quoting. Split at option boundaries,
 // preserving spaces, apostrophes and backslashes inside executable/workspace paths.
 // Never pass this text through a shell or interpret quotes as shell syntax.
-function backendFromPs(output, ownerPid, roots) {
+function backendFromPs(output, ownerPid, roots, { connection } = {}) {
     for (const line of output.split('\n')) {
         const row = /^\s*(\d+)\s+(\d+) (.*)$/.exec(line);
         if (!row || Number(row[2]) !== ownerPid) continue;
@@ -45,7 +48,7 @@ function backendFromPs(output, ownerPid, roots) {
         const backend = backendFromProcess(args.flatMap(arg => {
             const separate = /^(--[\w-]+) (.*)$/.exec(arg);
             return separate ? separate.slice(1) : [arg];
-        }), Number(row[2]), ownerPid, roots, { platform: 'darwin' });
+        }), Number(row[2]), ownerPid, roots, { platform: 'darwin', connection });
         if (backend) return { ...backend, pid: Number(row[1]) };
     }
 }
@@ -81,19 +84,19 @@ function windowsArgv(commandLine) {
     return args;
 }
 
-function backendFromWindows(output, ownerPid, roots) {
+function backendFromWindows(output, ownerPid, roots, { connection } = {}) {
     // Windows PowerShell emits a single object for one result, and no text for none.
     const decoded = output.trim() ? JSON.parse(output.replace(/^\uFEFF/, '')) : [];
     const rows = Array.isArray(decoded) ? decoded : [decoded];
     for (const row of rows) {
         if (!row || !Number.isInteger(row.ProcessId) || row.ProcessId <= 0
             || row.ParentProcessId !== ownerPid || typeof row.CommandLine !== 'string') continue;
-        const backend = backendFromProcess(windowsArgv(row.CommandLine), row.ParentProcessId, ownerPid, roots, { platform: 'win32' });
+        const backend = backendFromProcess(windowsArgv(row.CommandLine), row.ParentProcessId, ownerPid, roots, { platform: 'win32', connection });
         if (backend) return { ...backend, pid: row.ProcessId };
     }
 }
 
-function discoverBackend(ownerPid, roots, { platform = process.platform, procRoot = '/proc', exec = execFileSync } = {}) {
+function discoverBackend(ownerPid, roots, { platform = process.platform, procRoot = '/proc', exec = execFileSync, connection } = {}) {
     // The PID is the only dynamic value in the Windows inspection script.
     if (!Number.isSafeInteger(ownerPid) || ownerPid <= 0) throw new Error('Invalid extension host PID.');
     if (platform === 'darwin') {
@@ -106,7 +109,7 @@ function discoverBackend(ownerPid, roots, { platform = process.platform, procRoo
             // Child-process errors may include stdout (and therefore backend tokens).
             throw new Error('Could not inspect macOS processes. Check that /bin/ps is permitted.');
         }
-        const backend = backendFromPs(output, ownerPid, roots);
+        const backend = backendFromPs(output, ownerPid, roots, { connection });
         if (backend) return backend;
     } else if (platform === 'linux') {
         for (const pid of fs.readdirSync(procRoot)) {
@@ -117,7 +120,11 @@ function discoverBackend(ownerPid, roots, { platform = process.platform, procRoo
                 const parent = Number(/^PPid:\s+(\d+)/m.exec(status)?.[1]);
                 if (parent !== ownerPid) continue;
                 const args = fs.readFileSync(path.join(base, 'cmdline'), 'utf8').split('\0').filter(Boolean);
-                const backend = backendFromProcess(args, parent, ownerPid, roots, { platform });
+                const backend = backendFromProcess(args, parent, ownerPid, roots, { platform, connection,
+                    // Keep the read-only Linux probe working outside the VS Code extension host.
+                    readToken: () => fs.readFileSync(path.join(base, 'environ'), 'utf8').split('\0')
+                        .find(entry => entry.startsWith(CSRF_ENV))?.slice(CSRF_ENV.length)
+                });
                 if (backend) return { ...backend, pid: Number(pid) };
             } catch { /* Processes can exit during discovery. */ }
         }
@@ -132,7 +139,7 @@ function discoverBackend(ownerPid, roots, { platform = process.platform, procRoo
                 encoding: 'utf8', timeout: 5000, maxBuffer: 8 * 1024 * 1024,
                 windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
             });
-            backend = backendFromWindows(output, ownerPid, roots);
+            backend = backendFromWindows(output, ownerPid, roots, { connection });
         } catch {
             // Neither subprocess failures nor JSON parse errors may expose backend tokens.
             throw new Error('Could not inspect Windows processes. Check that Windows PowerShell and Get-CimInstance are permitted.');

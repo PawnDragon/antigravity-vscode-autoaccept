@@ -41,6 +41,18 @@ test('Windows supports separate flags, case-insensitive executable and workspace
     assert.equal(backendFromWindows(JSON.stringify(row({ CommandLine: commandLine.replace(roots[1], roots[1] + '-other') })), 42, roots), undefined);
 });
 
+test('Windows discovers environment-token backends using the official extension exports', () => {
+    const modern = JSON.stringify(row({ CommandLine: commandLine.replace(' --csrf_token=fixture-only', '') }));
+    const connection = { port: 12345, csrfToken: 'exported-fixture-only' };
+    assert.deepEqual(discoverBackend(42, roots, { platform: 'win32', connection, exec: () => modern }),
+        { pid: 43, port: 12345, token: connection.csrfToken });
+    for (const invalid of [undefined, { ...connection, port: 54321 }, { port: 12345 }, { ...connection, csrfToken: {} }]) {
+        assert.equal(backendFromWindows(modern, 42, roots, { connection: invalid }), undefined);
+    }
+    assert.equal(backendFromWindows(modern, 1, roots, { connection }), undefined);
+    assert.equal(backendFromWindows(modern, 42, [roots[0]], { connection }), undefined);
+});
+
 test('Windows workspace URI matching handles drive letters, Unicode, UNC and unrelated folders', () => {
     const summary = { workspaces: [{ workspaceFolderAbsoluteUri: 'file:///c:/users/example/' + encodeURIComponent("中文 project's folder") }] };
     assert.equal(belongsToWorkspace(summary, [roots[0]], { platform: 'win32' }), true);

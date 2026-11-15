@@ -18,6 +18,10 @@ function activate(context) {
     let lastError;
     let ticking = false;
     const log = message => output.appendLine(`[${new Date().toISOString()}] ${message}`);
+    const findBackend = () => {
+        const official = vscode.extensions.getExtension('google.google-antigravity');
+        return discoverBackend(process.pid, roots, { connection: official?.isActive ? official.exports : undefined });
+    };
     const paint = (state, tooltip = '') => {
         status.text = `$(zap) AG Auto Accept: ${state}`;
         status.tooltip = tooltip || 'Antigravity command approvals in this workspace. Click to toggle.';
@@ -29,7 +33,7 @@ function activate(context) {
         ticking = true;
         try {
             if (!backend) {
-                backend = discoverBackend(process.pid, roots);
+                backend = findBackend();
                 acceptor = new Acceptor({ call: (method, body) => rpc(backend, method, body), roots, active: () => enabled, log });
                 log(`CONNECTED to this window's Antigravity backend (PID ${backend.pid}); command approvals only.`);
             }
@@ -70,7 +74,7 @@ function activate(context) {
             output.show(true);
             if (enabled) await tick();
             else {
-                try { const found = discoverBackend(process.pid, roots); await rpc(found, 'GetAllCascadeTrajectories', {}); log(`CHECK OK: backend PID ${found.pid}; auto-accept remains OFF.`); }
+                try { const found = findBackend(); await rpc(found, 'GetAllCascadeTrajectories', {}); log(`CHECK OK: backend PID ${found.pid}; auto-accept remains OFF.`); }
                 catch (error) { log(`CHECK FAILED: ${error.message}`); }
             }
         }),

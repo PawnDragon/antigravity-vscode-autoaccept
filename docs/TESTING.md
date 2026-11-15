@@ -20,6 +20,18 @@ command registration conflicts when the previous extension is still active.
 Tests use synthetic commands and local HTTP fixtures, without calling a model
 or executing fixture commands.
 
+On 2026-11-15, version 0.1.9 was tested on Linux with Node.js 24.22.1 against
+the locally installed official Antigravity 1.12.0 / AGY CLI 1.5.9. The real
+backend passed the read-only connection probe using its environment token.
+Its conversation map was empty, so no real conversation approvals were submitted.
+The native Linux integration fixture passes its token only through the environment
+and exercises discovery using both the official-export connection shape and the
+`/proc` fallback, HTTP one-time approval verification, duplicate suppression,
+workspace isolation and backend exit. Regression fixtures also cover exported
+tokens on macOS and Windows, mismatched ports, inactive official extensions,
+legacy command-line tokens and credential-free logs. This update's tests were
+run only on Linux; native macOS and Windows validation below describes earlier releases.
+
 The adapter has been exercised against the real official
 `google.google-antigravity@1.10.0` on a Linux Remote SSH host. Backend records
 confirmed one-time approvals; associated commands subsequently reached DONE.
